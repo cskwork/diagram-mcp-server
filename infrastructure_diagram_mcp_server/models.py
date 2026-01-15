@@ -76,6 +76,7 @@ class DiagramGenerateResponse(BaseModel):
     message: str
     image_data: Optional[str] = Field(None, description='Base64-encoded PNG image data')
     mime_type: Optional[str] = Field(None, description='MIME type of the image')
+    drawio_path: Optional[str] = Field(None, description='Path to the editable .drawio file')
 
 
 class DiagramExampleResponse(BaseModel):

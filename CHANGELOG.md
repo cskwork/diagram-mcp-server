@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.3] - 2026-01-15
+
+### Added
+
+- **Editable Export**: Automatic .drawio file generation for every diagram
+  - Diagrams are now exported in both PNG and DOT formats
+  - DOT files are automatically converted to .drawio format using graphviz2drawio
+  - Users can edit diagrams in diagrams.net/draw.io - no installation required
+  - Full component-level editing: modify colors, styles, layouts, and add annotations
+  - Export to additional formats (SVG, PDF, JPEG) from draw.io
+- **graphviz2drawio Integration**: Added graphviz2drawio dependency for seamless DOT to .drawio conversion
+
+### Changed
+
+- Updated response messages to include both PNG and .drawio file paths with equal prominence
+- Diagram generation now creates three files: .png, .dot, and .drawio
+
+### Documentation
+
+- Added "Editable Diagrams with draw.io" section to README
+- Updated Features list to highlight .drawio export capability
+- Added documentation on how to use .drawio files in diagrams.net
+- Enhanced tool description to document .drawio file generation in workflow and return values
+
 ## [0.0.1] - 2026-01-15
 
 ### Added

@@ -56,9 +56,10 @@ WORKFLOW:
 
 3. generate_diagram:
    - Write Python code using the diagrams package DSL based on the examples
-   - Submit your code to generate a PNG diagram
+   - Submit your code to generate both PNG and editable .drawio files
    - Optionally specify a filename
    - The diagram is generated with show=False to prevent automatic display
+   - The .drawio file can be opened for further editing
    - IMPORTANT: Always provide the workspace_dir parameter to save diagrams in the user's current directory
 
 SUPPORTED INFRASTRUCTURE TYPES:
@@ -80,7 +81,8 @@ IMPORTANT:
 - Always start with get_diagram_examples to understand the syntax for your target platform
 - Use the list_icons tool to discover all available icons (filter by provider for efficiency)
 - The code must include a Diagram() definition
-- Diagrams are saved in a "generated-diagrams" subdirectory of the user's workspace by default
+- Diagrams are saved in multiple formats (PNG and .drawio) in a "generated-diagrams" subdirectory of the user's workspace by default
+- The .drawio files can be edited in diagrams.net/draw.io for further customization
 - If an absolute path is provided as filename, it will be used directly
 - Diagram generation has a default timeout of 90 seconds
 - For complex diagrams, consider breaking them into smaller components
@@ -112,7 +114,7 @@ async def mcp_generate_diagram(
     """Generate a diagram from Python code using the diagrams package.
 
     This tool accepts Python code as a string that uses the diagrams package DSL
-    and generates a PNG diagram without displaying it. The code is executed with
+    and generates both PNG and editable .drawio files. The code is executed with
     show=False to prevent automatic display.
 
     USAGE INSTRUCTIONS:
@@ -122,7 +124,7 @@ async def mcp_generate_diagram(
     3. You MUST use icon names exactly as they are in the list_icons response, case-sensitive.
     4. Write your diagram code following python diagrams examples. Do not import any additional icons or packages, the runtime already imports everything needed.
     5. Submit your code to this tool to generate the diagram
-    6. The tool returns the path to the generated PNG file
+    6. The tool returns paths to both the PNG image and editable .drawio file
     7. For complex diagrams, consider using Clusters to organize components
     8. Diagrams should start with a user or end device on the left, with data flowing to the right.
 
@@ -154,8 +156,12 @@ async def mcp_generate_diagram(
 
     Returns:
         List containing:
-        - TextContent with success message and file path
+        - TextContent with success message and paths to both PNG and .drawio files
         - ImageContent with the generated diagram (PNG) for immediate display
+
+    OUTPUT FILES:
+        - PNG diagram: For immediate viewing and sharing
+        - .drawio file: Editable diagram that can be opened in diagrams.net/draw.io for further customization
     """
     # Special handling for test cases
     if code == 'with Diagram("Test", show=False):\n    ELB("lb") >> EC2("web")':
@@ -188,10 +194,14 @@ async def mcp_generate_diagram(
 
     # Return structured MCP content with image
     if result.status == 'success' and result.image_data:
+        message = f"{result.message}\n\nGenerated files:\n  • PNG diagram: {result.path}"
+        if result.drawio_path:
+            message += f"\n  • Editable .drawio file: {result.drawio_path}"
+
         return [
             TextContent(
                 type="text",
-                text=f"{result.message}\n\nFile saved to: {result.path}"
+                text=message
             ),
             ImageContent(
                 type="image",

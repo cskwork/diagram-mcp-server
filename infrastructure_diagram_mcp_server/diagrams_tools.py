@@ -299,6 +299,7 @@ from diagrams.aws.enduser import *
                 # Check if show parameter is already set
                 has_show = 'show=' in original_args
                 has_filename = 'filename=' in original_args
+                has_outformat = 'outformat=' in original_args
 
                 # Prepare new arguments
                 new_args = original_args
@@ -320,6 +321,12 @@ from diagrams.aws.enduser import *
                     if new_args and not new_args.endswith(','):
                         new_args += ', '
                     new_args += 'show=False'
+
+                # Add outformat=["png", "dot"] to generate both PNG and DOT files
+                if not has_outformat:
+                    if new_args and not new_args.endswith(','):
+                        new_args += ', '
+                    new_args += 'outformat=["png", "dot"]'
 
                 # Replace in the code
                 code = code.replace(f'with Diagram({original_args})', f'with Diagram({new_args})')
@@ -356,12 +363,30 @@ from diagrams.aws.enduser import *
             with open(png_path, 'rb') as img_file:
                 image_data = base64.b64encode(img_file.read()).decode('utf-8')
 
+            # Convert DOT to .drawio format if DOT file exists
+            dot_path = f'{output_path}.dot'
+            drawio_path = None
+            if os.path.exists(dot_path):
+                try:
+                    from graphviz2drawio import graphviz2drawio
+
+                    drawio_path = f'{output_path}.drawio'
+                    # Convert DOT to .drawio
+                    xml = graphviz2drawio.convert(dot_path)
+                    with open(drawio_path, 'w') as f:
+                        f.write(xml)
+                    logger.info(f'Successfully converted DOT to draw.io format: {drawio_path}')
+                except Exception as e:
+                    logger.warning(f'Failed to convert DOT to draw.io format: {e}')
+                    # Non-fatal error - we still have the PNG
+
             response = DiagramGenerateResponse(
                 status='success',
                 path=png_path,
                 message=f'Diagram generated successfully at {png_path}',
                 image_data=image_data,
                 mime_type='image/png',
+                drawio_path=drawio_path,
             )
 
             return response

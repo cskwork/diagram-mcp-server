@@ -18,4 +18,4 @@ This package provides an MCP server that creates infrastructure diagrams
 for any cloud provider using the Python diagrams package DSL.
 """
 
-__version__ = '0.0.2'
+__version__ = '0.0.3'

@@ -120,6 +120,7 @@ The Infrastructure Diagram MCP Server provides the following capabilities:
 6. **Security**: Built-in code scanning to ensure secure diagram generation
 7. **Seamless Display**: Diagrams appear inline in Claude Desktop with automatic rendering
 8. **Flexible Output**: Save diagrams to PNG format in your workspace directory
+9. **Editable Export**: Automatically generates .drawio files for editing in diagrams.net/draw.io
 
 ## How to Use
 
@@ -155,6 +156,22 @@ The server will automatically:
 2. Generate Python code using the diagrams package
 3. Create and display the PNG diagram inline
 4. Save the diagram to your workspace directory
+5. Generate an editable .drawio file for further customization
+
+### Editable Diagrams with draw.io
+
+Every diagram is automatically exported in two formats:
+- **PNG**: For immediate viewing and sharing (displayed inline in Claude Desktop)
+- **.drawio**: For editing in [diagrams.net](https://app.diagrams.net) or draw.io
+
+The .drawio files allow you to:
+- Modify individual components, colors, and styles
+- Add additional notes, annotations, or documentation
+- Reorganize layout and positioning
+- Export to other formats (SVG, PDF, JPEG, etc.)
+- Collaborate with team members using a familiar tool
+
+Simply open the generated .drawio file in your browser at [diagrams.net](https://app.diagrams.net) - no installation required!
 
 ## What's New
 
@@ -164,6 +181,7 @@ This fork extends the original AWS Diagram MCP Server with:
 - ✅ **27+ Comprehensive Examples**: Ready-to-use templates across all providers
 - ✅ **Complete Icon Coverage**: All 2000+ icons properly imported and available
 - ✅ **Enhanced Display**: MCP ImageContent format for seamless inline rendering
+- ✅ **Editable Export**: Automatic .drawio file generation for editing in diagrams.net/draw.io
 - ✅ **Bug Fixes**: Resolved double `.png` extension and read-only filesystem issues
 - ✅ **Icon Corrections**: Fixed 28+ incorrect class names in examples
 
