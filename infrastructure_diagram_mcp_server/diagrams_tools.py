@@ -20,7 +20,7 @@ import inspect
 import logging
 import os
 import re
-import signal
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 import uuid
 from infrastructure_diagram_mcp_server.models import (
     DiagramExampleResponse,
@@ -83,6 +83,10 @@ async def generate_diagram(
         # If it's an absolute path, strip .png extension if present
         # (diagrams library adds .png automatically)
         output_path = filename[:-4] if filename.endswith('.png') else filename
+        # 절대 경로에서 디렉토리 추출 (execute_diagram_code에서 chdir에 사용)
+        output_dir = os.path.dirname(output_path)
+        # 디렉토리가 없으면 생성
+        os.makedirs(output_dir, exist_ok=True)
     else:
         # For non-absolute paths, use the "generated-diagrams" subdirectory
 
@@ -306,15 +310,17 @@ from diagrams.aws.enduser import *
 
                 # Add or replace parameters as needed
                 # If filename is already set, we need to replace it with our output_path
+                # Windows 경로의 백슬래시를 슬래시로 변환하여 Python 이스케이프 시퀀스 문제 방지
+                safe_output_path = output_path.replace('\\', '/')
                 if has_filename:
                     # Replace the existing filename parameter
                     filename_pattern = r'filename\s*=\s*[\'"]([^\'"]*)[\'"]'
-                    new_args = re.sub(filename_pattern, f"filename='{output_path}'", new_args)
+                    new_args = re.sub(filename_pattern, f"filename='{safe_output_path}'", new_args)
                 else:
                     # Add the filename parameter
                     if new_args and not new_args.endswith(','):
                         new_args += ', '
-                    new_args += f"filename='{output_path}'"
+                    new_args += f"filename='{safe_output_path}'"
 
                 # Add show=False if not already set
                 if not has_show:
@@ -331,29 +337,25 @@ from diagrams.aws.enduser import *
                 # Replace in the code
                 code = code.replace(f'with Diagram({original_args})', f'with Diagram({new_args})')
 
-        # Set up a timeout handler
-        def timeout_handler(signum, frame):
-            raise TimeoutError(f'Diagram generation timed out after {timeout} seconds')
+        def execute_diagram_code():
+            """Execute diagram code in a separate thread for cross-platform timeout support."""
+            original_cwd = os.getcwd()
+            try:
+                os.chdir(output_dir)
+                # Execute the code
+                # nosec B102 - This exec is necessary to run user-provided diagram code in a controlled environment
+                exec(code, namespace)  # nosem: python.lang.security.audit.exec-detected.exec-detected
+            finally:
+                # Always restore the original working directory
+                os.chdir(original_cwd)
 
-        # Register the timeout handler
-        signal.signal(signal.SIGALRM, timeout_handler)
-        signal.alarm(timeout)
-
-        # Change to output directory before executing code
-        # This ensures the diagrams library can create temporary directories
-        original_cwd = os.getcwd()
-        try:
-            os.chdir(output_dir)
-
-            # Execute the code
-            # nosec B102 - This exec is necessary to run user-provided diagram code in a controlled environment
-            exec(code, namespace)  # nosem: python.lang.security.audit.exec-detected.exec-detected
-        finally:
-            # Always restore the original working directory
-            os.chdir(original_cwd)
-
-        # Cancel the alarm
-        signal.alarm(0)
+        # Use ThreadPoolExecutor for cross-platform timeout support (works on both Unix and Windows)
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(execute_diagram_code)
+            try:
+                future.result(timeout=timeout)
+            except FuturesTimeoutError:
+                raise TimeoutError(f'Diagram generation timed out after {timeout} seconds')
 
         # Check if the file was created
         png_path = f'{output_path}.png'
